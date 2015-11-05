@@ -1,0 +1,21 @@
+{
+  "name": "jsreport-authorization",
+  "version": "0.0.1",
+  "description": "jsreport extension adding authorization cappabilities",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "keywords": [
+    "jsreport",
+    "analytics"
+  ],
+  "license": "LGPL",
+  "dependencies": {
+    "node.extend": "^1.1.5",
+    "q": "^1.4.1",
+    "request": "^2.65.0",
+    "underscore": "^1.8.3"
+  },
+  "author": "Jan Blaha",
+  "devDependencies": {}
+}
