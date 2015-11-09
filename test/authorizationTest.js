@@ -1,80 +1,77 @@
-/*globals describe, it, beforeEach, afterEach */
+require('should')
+var path = require('path')
+var domain = require('domain')
+var Reporter = require('jsreport-core').Reporter
 
-var assert = require("assert"),
-    path = require("path"),
-    authApp = require("express")(),
-    should = require("should"),
-    ObjectID = require('mongodb').ObjectID,
-    describeReporting = require("../../../test/helpers.js").describeReporting;
+describe('authorization', function () {
+  var reporter
 
-describeReporting(path.join(__dirname, "../../../"), ["templates", "authentication", "authorization"], function (reporter) {
+  beforeEach(function (done) {
+    reporter = new Reporter({
+      rootDirectory: path.join(__dirname, '../')
+    })
 
-    describe('authorization', function () {
+    reporter.authentication = {}
+    reporter.init().then(function () {
+      process.domain = process.domain || domain.create()
+      process.domain.req = {}
+      done()
+    }).fail(done)
+  })
 
-        beforeEach(function (done) {
-            reporter.authentication = {};
-            done();
-        });
+  function runInUserDomain (id, fn) {
+    var d = require('domain').create()
+    d.req = {user: {_id: id}}
 
-        afterEach(function () {
-        });
+    d.run(fn)
+  }
 
-        function runInUserDomain(id, fn) {
-            var d = require('domain').create();
-            d.req = {user: {_id: id}};
+  function createTemplate (userId, done, error) {
+    runInUserDomain(userId, function () {
+      return reporter.documentStore.collection('templates').insert({content: 'foo'}).then(function () {
+        done()
+      }).catch(error)
+    })
+  }
 
-            d.run(fn);
-        }
+  function countTemplates (userId, done, error) {
+    runInUserDomain(userId, function () {
+      return reporter.documentStore.collection('templates').find({}).then(function (res) {
+        done(res.length)
+      }).catch(error)
+    })
+  }
 
-        function createTemplate(userId, done, error) {
-            runInUserDomain(userId, function () {
-                return reporter.documentStore.collection("templates").insert({content: "foo"}).then(function () {
-                    done();
-                }).catch(error);
-            });
-        }
+  var userId1 = 'NTRiZTU1MTFiY2NkNmYzYzI3OTdiNjYz'
+  var userId2 = 'NTRiZTVhMzU5ZDI4ZmU1ODFjMTI4MjMy'
 
-        function countTemplates(userId, done, error) {
-            runInUserDomain(userId, function () {
-                return reporter.documentStore.collection("templates").find({}).then(function (res) {
-                    done(res.length);
-                }).catch(error);
-            });
-        }
+  it('user creating entity should be able to read it', function (done) {
+    createTemplate(userId1, function () {
+      countTemplates(userId1, function (count) {
+        count.should.be.eql(1)
+        done()
+      }, done)
+    }, done)
+  })
 
-        var userId1 = "NTRiZTU1MTFiY2NkNmYzYzI3OTdiNjYz";
-        var userId2 = "NTRiZTVhMzU5ZDI4ZmU1ODFjMTI4MjMy";
+  it('user should not be able to read entity without permission to it', function (done) {
+    createTemplate(userId1, function () {
+      console.log('counting templtates')
+      countTemplates(userId2, function (count) {
+        count.should.be.eql(0)
+        done()
+      }, done)
+    }, done)
+  })
 
-        it('user creating entity should be able to read it', function (done) {
-            createTemplate(userId1, function () {
-                countTemplates(userId1, function (count) {
-                    count.should.be.eql(1);
-                    done();
-                }, done);
-            }, done);
-        });
-
-        it('user should not be able to read entity without permission to it', function (done) {
-            createTemplate(userId1, function () {
-                console.log("counting templtates");
-                countTemplates(userId2, function (count) {
-                    count.should.be.eql(0);
-                    done();
-                }, done);
-            }, done);
-        });
-
-        it('query should filter out entities without permissions', function (done) {
-            createTemplate(userId1, function () {
-                createTemplate(userId2, function () {
-                    countTemplates(userId1, function (count) {
-                        count.should.be.eql(1);
-                        done();
-                    }, done);
-                }, done);
-
-            }, done);
-        });
-    });
-});
-
+  it('query should filter out entities without permissions', function (done) {
+    createTemplate(userId1, function () {
+      createTemplate(userId2, function () {
+        countTemplates(userId1, function (count) {
+          count.should.be.eql(1)
+          done()
+        }, done)
+      }, done)
+    }, done)
+  })
+})
