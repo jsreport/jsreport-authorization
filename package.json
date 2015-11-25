@@ -31,6 +31,7 @@
   "author": "Jan Blaha",
   "devDependencies": {
     "jsreport-core": "*",
+    "jsreport-templates": "*",
     "eslint": "^1.9.0",
     "mocha": "^2.3.3",
     "should": "^7.1.1",
