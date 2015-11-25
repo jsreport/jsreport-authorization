@@ -5,9 +5,14 @@
   "scripts": {
     "test": "mocha test && standard"
   },
+  "homepage": "https://github.com/jsreport/jsreport-authorization",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:jsreport/jsreport-authorization.git"
+  },
   "keywords": [
     "jsreport",
-    "analytics"
+    "authorization"
   ],
   "standard": {
     "ignore": [
@@ -23,10 +28,10 @@
   },
   "license": "LGPL",
   "dependencies": {
-    "node.extend": "^1.1.5",
-    "q": "^1.4.1",
-    "request": "^2.65.0",
-    "underscore": "^1.8.3"
+    "node.extend": "1.1.5",
+    "q": "1.4.1",
+    "request": "2.65.0",
+    "underscore": "1.8.3"
   },
   "author": "Jan Blaha",
   "devDependencies": {
