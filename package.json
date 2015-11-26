@@ -1,6 +1,6 @@
 {
   "name": "jsreport-authorization",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "jsreport extension adding authorization cappabilities",
   "scripts": {
     "test": "mocha test && standard"
