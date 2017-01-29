@@ -29,9 +29,9 @@
   },
   "license": "LGPL",
   "dependencies": {
+    "bluebird": "3.4.7",
     "in-publish": "2.0.0",
-    "node.extend": "1.1.5",
-    "q": "1.4.1",
+    "node.extend": "1.1.5",    
     "request": "2.72.0",
     "underscore": "1.8.3"
   },
@@ -49,6 +49,9 @@
     "standard": "7.1.2"
   },
   "files": [
-    "lib", "studio", "index.js", "jsreport.config.js"
+    "lib",
+    "studio",
+    "index.js",
+    "jsreport.config.js"
   ]
 }
