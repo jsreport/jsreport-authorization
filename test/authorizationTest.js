@@ -5,15 +5,13 @@ var Reporter = require('jsreport-core').Reporter
 describe('authorization', function () {
   var reporter
 
-  beforeEach(function (done) {
+  beforeEach(function () {
     reporter = new Reporter({
       rootDirectory: path.join(__dirname, '../')
     })
 
     reporter.authentication = {}
-    reporter.init().then(function () {
-      done()
-    }).fail(done)
+    return reporter.init()
   })
 
   function createTemplate (req, done, error) {

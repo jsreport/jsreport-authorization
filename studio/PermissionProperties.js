@@ -10,7 +10,7 @@ export default class PermissionProperties extends Component {
     const users = this.selectUsers(entities)
 
     if (entity.__entitySet === 'users') {
-      return <div></div>
+      return <div />
     }
 
     const selectValues = (el) => {
