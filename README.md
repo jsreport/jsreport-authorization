@@ -4,13 +4,13 @@
 
 > Manage and delegate user permissions on jsreport objects. 
 
-See http://jsreport.net/learn/authorization
+See https://jsreport.net/learn/authorization
 
-##Installation
+## Installation
 
 > **npm install jsreport-authorization**
 
-##jsreport-core
+## jsreport-core
 You can apply this extension also manually to [jsreport-core](https://github.com/jsreport/jsreport-core)
 
 ```js
