@@ -31,9 +31,9 @@
   },
   "license": "LGPL",
   "dependencies": {
-    "bluebird": "3.4.7",
+    "bluebird": "3.5.0",
     "in-publish": "2.0.0",
-    "node.extend": "1.1.6",    
+    "node.extend": "1.1.6",
     "request": "2.79.0",
     "underscore": "1.8.3"
   },
