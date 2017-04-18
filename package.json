@@ -3,6 +3,8 @@
   "version": "1.1.0",
   "description": "jsreport extension adding authorization cappabilities",
   "scripts": {
+    "start": "jsreport-studio-start --httpPort 5488",
+    "run": "npm run build && jsreport-studio-start --httpPort 5488 --run-only",
     "test": "mocha test --timeout 5000 && standard",
     "build": "npm run prepublish",
     "prepublish": "in-publish && jsreport-studio-build || not-in-publish"
