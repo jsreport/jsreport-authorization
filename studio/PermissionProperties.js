@@ -46,4 +46,3 @@ export default class PermissionProperties extends Component {
     )
   }
 }
-

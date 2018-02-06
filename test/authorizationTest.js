@@ -1,60 +1,103 @@
-require('should')
-var path = require('path')
-var Reporter = require('jsreport-core').Reporter
+const should = require('should')
+const jsreport = require('jsreport-core')
+const createRequest = require('jsreport-core/lib/render/request')
 
-describe('authorization', function () {
-  var reporter
+describe('authorization', () => {
+  let reporter
 
-  beforeEach(function () {
-    reporter = new Reporter({
-      rootDirectory: path.join(__dirname, '../')
-    })
-
+  beforeEach(() => {
+    reporter = jsreport()
+    reporter.use(require('../')())
+    reporter.use(require('jsreport-templates')())
     reporter.authentication = {}
     return reporter.init()
   })
 
-  function createTemplate (req, done, error) {
-    return reporter.documentStore.collection('templates').insert({content: 'foo'}, req).then(function () {
-      done()
-    }).catch(error)
+  function createTemplate (req) {
+    return reporter.documentStore.collection('templates').insert({content: 'foo'}, req)
   }
 
-  function countTemplates (req, done, error) {
-    return reporter.documentStore.collection('templates').find({}, req).then(function (res) {
-      done(res.length)
-    }).catch(error)
+  async function countTemplates (req) {
+    const res = await reporter.documentStore.collection('templates').find({}, req)
+    return res.length
   }
 
-  var req1 = { user: { _id: 'NTRiZTU1MTFiY2NkNmYzYzI3OTdiNjYz' } }
-  var req2 = { user: { _id: 'NTRiZTVhMzU5ZDI4ZmU1ODFjMTI4MjMy' } }
+  const req1 = createRequest({ context: { user: { _id: 'NTRiZTU1MTFiY2NkNmYzYzI3OTdiNjYz' } } })
+  const req2 = createRequest({ context: { user: { _id: 'NTRiZTVhMzU5ZDI4ZmU1ODFjMTI4MjMy' } } })
 
-  it('user creating entity should be able to read it', function (done) {
-    createTemplate(req1, function () {
-      countTemplates(req1, function (count) {
-        count.should.be.eql(1)
-        done()
-      }, done)
-    }, done)
+  it('user creating entity should be able to read it', async () => {
+    await createTemplate(req1)
+    const count = await countTemplates(req1)
+    count.should.be.eql(1)
   })
 
-  it('user should not be able to read entity without permission to it', function (done) {
-    createTemplate(req1, function () {
-      countTemplates(req2, function (count) {
-        count.should.be.eql(0)
-        done()
-      }, done)
-    }, done)
+  it('user should not be able to read entity without permission to it', async () => {
+    await createTemplate(req1)
+    const count = await countTemplates(req2)
+    count.should.be.eql(0)
   })
 
-  it('query should filter out entities without permissions', function (done) {
-    createTemplate(req1, function () {
-      createTemplate(req2, function () {
-        countTemplates(req1, function (count) {
-          count.should.be.eql(1)
-          done()
-        }, done)
-      }, done)
-    }, done)
+  it('query should filter out entities without permissions', async () => {
+    await createTemplate(req1)
+    await createTemplate(req2)
+    const count = await countTemplates(req1)
+    count.should.be.eql(1)
+  })
+
+  it('user creating entity should be able to update it', async () => {
+    await createTemplate(req1)
+    await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req1)
+    const templates = await reporter.documentStore.collection('templates').find({}, req1)
+    templates[0].content.should.be.eql('hello')
+  })
+
+  it('user creating entity should be able to remove it', async () => {
+    await createTemplate(req1)
+    await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req1)
+    await reporter.documentStore.collection('templates').remove({}, req1)
+    const count = await countTemplates(req1)
+    count.should.be.eql(0)
+  })
+
+  it('user without permission should not be able to update entity', async () => {
+    await createTemplate(req1)
+    try {
+      await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req2)
+    } catch (e) {
+      e.message.should.containEql('Unauthorized')
+    }
+  })
+
+  it('user without permission should not be able to remove entity', async () => {
+    await createTemplate(req1)
+    try {
+      await reporter.documentStore.collection('templates').remove({}, req2)
+    } catch (e) {
+      e.message.should.containEql('Unauthorized')
+    }
+  })
+
+  it('admin user should be able to remove entity even without permission', async () => {
+    await createTemplate(req1)
+    await reporter.documentStore.collection('templates').remove({}, createRequest({ context: { user: { isAdmin: true } } }))
+    const count = await countTemplates(req1)
+    count.should.be.eql(0)
+  })
+
+  it('admin user should be able to update entity even without permission', async () => {
+    await createTemplate(req1)
+    await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, createRequest({ context: { user: { isAdmin: true } } }))
+    const templates = await reporter.documentStore.collection('templates').find({}, req1)
+    templates[0].content.should.be.eql('hello')
+  })
+
+  it('authorizeRequest should return false when user is not authorized', async () => {
+    const requestAuth = await reporter.authorization.authorizeRequest({ context: { } })
+    should(requestAuth).not.be.ok()
+  })
+
+  it('authorizeRequest should return true when user is authorized', async () => {
+    const requestAuth = await reporter.authorization.authorizeRequest(req1)
+    should(requestAuth).be.ok()
   })
 })
