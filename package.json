@@ -4,7 +4,7 @@
   "description": "jsreport extension adding authorization cappabilities",
   "scripts": {
     "test": "mocha test --timeout 5000 && standard",
-    "build": "npm run prepublish",
+    "build": "jsreport-studio-build",
     "prepublish": "in-publish && jsreport-studio-build || not-in-publish"
   },
   "homepage": "https://github.com/jsreport/jsreport-authorization",
