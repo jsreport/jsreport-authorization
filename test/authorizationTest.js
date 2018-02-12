@@ -63,6 +63,7 @@ describe('authorization', () => {
     await createTemplate(req1)
     try {
       await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req2)
+      throw new Error('Should have faied')
     } catch (e) {
       e.message.should.containEql('Unauthorized')
     }
@@ -72,6 +73,7 @@ describe('authorization', () => {
     await createTemplate(req1)
     try {
       await reporter.documentStore.collection('templates').remove({}, req2)
+      throw new Error('Should have faied')
     } catch (e) {
       e.message.should.containEql('Unauthorized')
     }
