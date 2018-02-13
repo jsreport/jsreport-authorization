@@ -61,22 +61,16 @@ describe('authorization', () => {
 
   it('user without permission should not be able to update entity', async () => {
     await createTemplate(req1)
-    try {
-      await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req2)
-      throw new Error('Should have faied')
-    } catch (e) {
-      e.message.should.containEql('Unauthorized')
-    }
+    return reporter.documentStore.collection('templates')
+      .update({}, { $set: { content: 'hello' } }, req2)
+      .should.be.rejectedWith(/Unauthorized/)
   })
 
   it('user without permission should not be able to remove entity', async () => {
     await createTemplate(req1)
-    try {
-      await reporter.documentStore.collection('templates').remove({}, req2)
-      throw new Error('Should have faied')
-    } catch (e) {
-      e.message.should.containEql('Unauthorized')
-    }
+    return reporter.documentStore.collection('templates')
+      .remove({}, req2)
+      .should.be.rejectedWith(/Unauthorized/)
   })
 
   it('admin user should be able to remove entity even without permission', async () => {
