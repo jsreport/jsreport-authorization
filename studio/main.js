@@ -46,6 +46,8 @@
 
 	'use strict';
 	
+	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+	
 	var _PermissionProperties = __webpack_require__(1);
 	
 	var _PermissionProperties2 = _interopRequireDefault(_PermissionProperties);
@@ -56,9 +58,75 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+	
 	_jsreportStudio2.default.addPropertiesComponent('permissions', _PermissionProperties2.default, function (entity) {
 	  return entity.__entitySet !== 'users';
 	});
+	
+	_jsreportStudio2.default.initializeListeners.push(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
+	  return regeneratorRuntime.wrap(function _callee$(_context) {
+	    while (1) {
+	      switch (_context.prev = _context.next) {
+	        case 0:
+	          if (_jsreportStudio2.default.authentication) {
+	            _context.next = 2;
+	            break;
+	          }
+	
+	          return _context.abrupt('return');
+	
+	        case 2:
+	
+	          _jsreportStudio2.default.authentication.useEditorComponents.push(function (user) {
+	            return React.createElement(
+	              'div',
+	              null,
+	              React.createElement(
+	                'h2',
+	                null,
+	                'Authorization'
+	              ),
+	              React.createElement(
+	                'div',
+	                null,
+	                React.createElement(
+	                  'div',
+	                  { className: 'form-group' },
+	                  React.createElement(
+	                    'label',
+	                    null,
+	                    'Allow read all entities'
+	                  ),
+	                  React.createElement('input', { type: 'checkbox', checked: user.readAllPermissions === true,
+	                    onChange: function onChange(v) {
+	                      return _jsreportStudio2.default.updateEntity(_extends({}, user, { readAllPermissions: v.target.checked }));
+	                    } })
+	                ),
+	                React.createElement(
+	                  'div',
+	                  { className: 'form-group' },
+	                  React.createElement(
+	                    'label',
+	                    null,
+	                    'Allow edit all entities'
+	                  ),
+	                  React.createElement('input', { type: 'checkbox', checked: user.editAllPermissions === true,
+	                    onChange: function onChange(v) {
+	                      return _jsreportStudio2.default.updateEntity(_extends({}, user, { editAllPermissions: v.target.checked }));
+	                    } })
+	                )
+	              )
+	            );
+	          });
+	
+	        case 3:
+	        case 'end':
+	          return _context.stop();
+	      }
+	    }
+	  }, _callee, undefined);
+	})));
 
 /***/ },
 /* 1 */
