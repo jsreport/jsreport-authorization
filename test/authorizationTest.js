@@ -9,12 +9,16 @@ describe('authorization', () => {
     reporter = jsreport()
     reporter.use(require('../')())
     reporter.use(require('jsreport-templates')())
-    reporter.authentication = {}
+    reporter.use((reporter, definition) => {
+      // auth fake
+      reporter.authentication = {}
+      reporter.documentStore.model.entityTypes['UserType'] = {}
+    })
     return reporter.init()
   })
 
   function createTemplate (req) {
-    return reporter.documentStore.collection('templates').insert({content: 'foo'}, req)
+    return reporter.documentStore.collection('templates').insert({content: 'foo', engine: 'none', recipe: 'html'}, req)
   }
 
   async function countTemplates (req) {
@@ -95,5 +99,17 @@ describe('authorization', () => {
   it('authorizeRequest should return true when user is authorized', async () => {
     const requestAuth = await reporter.authorization.authorizeRequest(req1)
     should(requestAuth).be.ok()
+  })
+
+  it('user with readAllPermissions should be able to read all entities', async () => {
+    await createTemplate(req1)
+    const count = await countTemplates(createRequest({ context: { user: { _id: 'foo', readAllPermissions: true } } }))
+    count.should.be.eql(1)
+  })
+
+  it('user with editAllPermissions should be able to update entities', async () => {
+    await createTemplate(req1)
+    const req = createRequest({ context: { user: { _id: 'foo', editAllPermissions: true } } })
+    await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req)
   })
 })
