@@ -18,7 +18,7 @@ describe('authorization', () => {
   })
 
   function createTemplate (req) {
-    return reporter.documentStore.collection('templates').insert({content: 'foo', engine: 'none', recipe: 'html'}, req)
+    return reporter.documentStore.collection('templates').insert({content: 'foo', name: 'foo', engine: 'none', recipe: 'html'}, req)
   }
 
   async function countTemplates (req) {
