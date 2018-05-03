@@ -144,6 +144,10 @@
 	
 	var _react2 = _interopRequireDefault(_react);
 	
+	var _jsreportStudio = __webpack_require__(3);
+	
+	var _jsreportStudio2 = _interopRequireDefault(_jsreportStudio);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -151,6 +155,8 @@
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var MultiSelect = _jsreportStudio2.default.MultiSelect;
 	
 	var PermissionProperties = function (_Component) {
 	  _inherits(PermissionProperties, _Component);
@@ -184,11 +190,17 @@
 	        return _react2.default.createElement('div', null);
 	      }
 	
-	      var selectValues = function selectValues(el) {
+	      var selectValues = function selectValues(selectData) {
+	        var selectedValue = selectData.value,
+	            options = selectData.options;
+	
 	        var res = [];
-	        for (var i = 0; i < el.options.length; i++) {
-	          if (el.options[i].selected) {
-	            res.push(el.options[i].value);
+	
+	        for (var i = 0; i < options.length; i++) {
+	          var optionIsSelected = selectedValue.indexOf(options[i].value) !== -1;
+	
+	          if (optionIsSelected) {
+	            res.push(options[i].value);
 	          }
 	        }
 	
@@ -206,21 +218,17 @@
 	            null,
 	            'read permissions'
 	          ),
-	          _react2.default.createElement(
-	            'select',
-	            { title: 'Use CTRL to deselect item and also to select multiple options.',
-	              multiple: true, value: entity.readPermissions || [],
-	              onChange: function onChange(v) {
-	                return _onChange({ _id: entity._id, readPermissions: selectValues(v.target) });
-	              } },
-	            users.map(function (e) {
-	              return _react2.default.createElement(
-	                'option',
-	                { key: e._id, value: e._id },
-	                e.username
-	              );
+	          _react2.default.createElement(MultiSelect, {
+	            title: 'Use the checkboxes to select/deselect multiple options',
+	            size: 7,
+	            value: entity.readPermissions || [],
+	            onChange: function onChange(selectData) {
+	              return _onChange({ _id: entity._id, readPermissions: selectValues(selectData) });
+	            },
+	            options: users.map(function (u) {
+	              return { key: u._id, name: u.username, value: u._id };
 	            })
-	          )
+	          })
 	        ),
 	        _react2.default.createElement(
 	          'div',
@@ -230,21 +238,17 @@
 	            null,
 	            'edit permissions'
 	          ),
-	          _react2.default.createElement(
-	            'select',
-	            { title: 'Use CTRL to deselect item and also to select multiple options.',
-	              multiple: true, value: entity.editPermissions || [],
-	              onChange: function onChange(v) {
-	                return _onChange({ _id: entity._id, editPermissions: selectValues(v.target) });
-	              } },
-	            users.map(function (e) {
-	              return _react2.default.createElement(
-	                'option',
-	                { key: e._id, value: e._id },
-	                e.username
-	              );
+	          _react2.default.createElement(MultiSelect, {
+	            title: 'Use the checkboxes to select/deselect multiple options',
+	            size: 7,
+	            value: entity.editPermissions || [],
+	            onChange: function onChange(selectData) {
+	              return _onChange({ _id: entity._id, editPermissions: selectValues(selectData) });
+	            },
+	            options: users.map(function (u) {
+	              return { key: u._id, name: u.username, value: u._id };
 	            })
-	          )
+	          })
 	        )
 	      );
 	    }
