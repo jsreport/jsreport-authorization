@@ -60,16 +60,12 @@
 	
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 	
-	_jsreportStudio2.default.addPropertiesComponent('permissions', _PermissionProperties2.default, function (entity) {
-	  return entity.__entitySet !== 'users';
-	});
-	
 	_jsreportStudio2.default.initializeListeners.push(_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee() {
 	  return regeneratorRuntime.wrap(function _callee$(_context) {
 	    while (1) {
 	      switch (_context.prev = _context.next) {
 	        case 0:
-	          if (_jsreportStudio2.default.authentication) {
+	          if (!(!_jsreportStudio2.default.authentication || !_jsreportStudio2.default.authentication.user.isAdmin)) {
 	            _context.next = 2;
 	            break;
 	          }
@@ -77,6 +73,10 @@
 	          return _context.abrupt('return');
 	
 	        case 2:
+	
+	          _jsreportStudio2.default.addPropertiesComponent('permissions', _PermissionProperties2.default, function (entity) {
+	            return entity.__entitySet !== 'users';
+	          });
 	
 	          _jsreportStudio2.default.authentication.useEditorComponents.push(function (user) {
 	            return React.createElement(
@@ -120,7 +120,7 @@
 	            );
 	          });
 	
-	        case 3:
+	        case 4:
 	        case 'end':
 	          return _context.stop();
 	      }

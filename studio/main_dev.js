@@ -1,12 +1,12 @@
 import PermissionProperties from './PermissionProperties.js'
 import Studio from 'jsreport-studio'
 
-Studio.addPropertiesComponent('permissions', PermissionProperties, (entity) => entity.__entitySet !== 'users')
-
 Studio.initializeListeners.push(async () => {
-  if (!Studio.authentication) {
+  if (!Studio.authentication || !Studio.authentication.user.isAdmin) {
     return
   }
+
+  Studio.addPropertiesComponent('permissions', PermissionProperties, (entity) => entity.__entitySet !== 'users')
 
   Studio.authentication.useEditorComponents.push((user) => <div>
     <h2>Authorization</h2>
