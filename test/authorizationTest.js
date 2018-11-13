@@ -112,4 +112,135 @@ describe('authorization', () => {
     const req = createRequest({ context: { user: { _id: 'foo', editAllPermissions: true } } })
     await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req)
   })
+
+  it('user with permissions to the folder should have access also to the entities inside the folder', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folder',
+      shortid: 'folder',
+      readPermissions: [req2.context.user._id]
+    }, req1)
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'folder'
+      }
+    }, req1)
+
+    const count = await countTemplates(req2)
+    count.should.be.eql(1)
+  })
+
+  it('user should not be able to create entities in folders where he has no permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folder',
+      shortid: 'folder'
+    }, req1)
+
+    return reporter.documentStore.collection('folders').insert({
+      name: 'nested',
+      shortid: 'nested',
+      folder: { shortid: 'folder' }
+    }, req2).should.be.rejected()
+  })
+
+  it('user should be able to create entities in folders where he has permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folder',
+      shortid: 'folder',
+      editPermissions: [req2.context.user._id]
+    }, req1)
+
+    return reporter.documentStore.collection('folders').insert({
+      name: 'nested',
+      shortid: 'nested',
+      folder: { shortid: 'folder' }
+    }, req2)
+  })
+
+  it('user should not be able to update entities in folders where he has no permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folder',
+      shortid: 'folder'
+    }, req1)
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      recipe: 'html',
+      content: 'foo',
+      folder: { shortid: 'folder' }
+    }, req1)
+
+    return reporter.documentStore.collection('templates').update({
+      name: 'template'
+    }, {
+      $set: { content: 'change' }
+    }, req2).should.be.rejected()
+  })
+
+  it('user should be able to update entities in folders where he has permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folder',
+      shortid: 'folder',
+      editPermissions: [req2.context.user._id],
+      readPermissions: [req2.context.user._id]
+    }, req1)
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      recipe: 'html',
+      content: 'foo',
+      folder: { shortid: 'folder' }
+    }, req2)
+
+    return reporter.documentStore.collection('templates').update({
+      name: 'template'
+    }, {
+      $set: { content: 'change' }
+    }, req1)
+  })
+
+  it('user should not be able to remove entities in folders where he has no permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folder',
+      shortid: 'folder'
+    }, req1)
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      recipe: 'html',
+      content: 'foo',
+      folder: { shortid: 'folder' }
+    }, req1)
+
+    return reporter.documentStore.collection('templates').remove({
+      name: 'template'
+    }, req2).should.be.rejected()
+  })
+
+  it('user should be able to remove entities in folders where he has permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folder',
+      shortid: 'folder',
+      editPermissions: [req2.context.user._id]
+    }, req1)
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      recipe: 'html',
+      content: 'foo',
+      folder: { shortid: 'folder' }
+    }, req1)
+
+    return reporter.documentStore.collection('templates').remove({
+      name: 'template'
+    }, req2)
+  })
 })
