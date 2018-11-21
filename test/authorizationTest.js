@@ -26,68 +26,68 @@ describe('authorization', () => {
     return res.length
   }
 
-  const req1 = createRequest({ context: { user: { _id: 'NTRiZTU1MTFiY2NkNmYzYzI3OTdiNjYz' } } })
-  const req2 = createRequest({ context: { user: { _id: 'NTRiZTVhMzU5ZDI4ZmU1ODFjMTI4MjMy' } } })
+  const req1 = () => createRequest({ context: { user: { _id: 'a' } } })
+  const req2 = () => createRequest({ context: { user: { _id: 'b' } } })
 
   it('user creating entity should be able to read it', async () => {
-    await createTemplate(req1)
-    const count = await countTemplates(req1)
+    await createTemplate(req1())
+    const count = await countTemplates(req1())
     count.should.be.eql(1)
   })
 
   it('user should not be able to read entity without permission to it', async () => {
-    await createTemplate(req1)
-    const count = await countTemplates(req2)
+    await createTemplate(req1())
+    const count = await countTemplates(req2())
     count.should.be.eql(0)
   })
 
   it('query should filter out entities without permissions', async () => {
-    await createTemplate(req1)
-    await createTemplate(req2)
-    const count = await countTemplates(req1)
+    await createTemplate(req1())
+    await createTemplate(req2())
+    const count = await countTemplates(req1())
     count.should.be.eql(1)
   })
 
   it('user creating entity should be able to update it', async () => {
-    await createTemplate(req1)
-    await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req1)
-    const templates = await reporter.documentStore.collection('templates').find({}, req1)
+    await createTemplate(req1())
+    await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req1())
+    const templates = await reporter.documentStore.collection('templates').find({}, req1())
     templates[0].content.should.be.eql('hello')
   })
 
   it('user creating entity should be able to remove it', async () => {
-    await createTemplate(req1)
-    await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req1)
-    await reporter.documentStore.collection('templates').remove({}, req1)
-    const count = await countTemplates(req1)
+    await createTemplate(req1())
+    await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req1())
+    await reporter.documentStore.collection('templates').remove({}, req1())
+    const count = await countTemplates(req1())
     count.should.be.eql(0)
   })
 
   it('user without permission should not be able to update entity', async () => {
-    await createTemplate(req1)
+    await createTemplate(req1())
     return reporter.documentStore.collection('templates')
-      .update({}, { $set: { content: 'hello' } }, req2)
+      .update({}, { $set: { content: 'hello' } }, req2())
       .should.be.rejectedWith(/Unauthorized/)
   })
 
   it('user without permission should not be able to remove entity', async () => {
-    await createTemplate(req1)
+    await createTemplate(req1())
     return reporter.documentStore.collection('templates')
-      .remove({}, req2)
+      .remove({}, req2())
       .should.be.rejectedWith(/Unauthorized/)
   })
 
   it('admin user should be able to remove entity even without permission', async () => {
-    await createTemplate(req1)
+    await createTemplate(req1())
     await reporter.documentStore.collection('templates').remove({}, createRequest({ context: { user: { isAdmin: true } } }))
-    const count = await countTemplates(req1)
+    const count = await countTemplates(req1())
     count.should.be.eql(0)
   })
 
   it('admin user should be able to update entity even without permission', async () => {
-    await createTemplate(req1)
+    await createTemplate(req1())
     await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, createRequest({ context: { user: { isAdmin: true } } }))
-    const templates = await reporter.documentStore.collection('templates').find({}, req1)
+    const templates = await reporter.documentStore.collection('templates').find({}, req1())
     templates[0].content.should.be.eql('hello')
   })
 
@@ -97,18 +97,18 @@ describe('authorization', () => {
   })
 
   it('authorizeRequest should return true when user is authorized', async () => {
-    const requestAuth = await reporter.authorization.authorizeRequest(req1)
+    const requestAuth = await reporter.authorization.authorizeRequest(req1())
     should(requestAuth).be.ok()
   })
 
   it('user with readAllPermissions should be able to read all entities', async () => {
-    await createTemplate(req1)
+    await createTemplate(req1())
     const count = await countTemplates(createRequest({ context: { user: { _id: 'foo', readAllPermissions: true } } }))
     count.should.be.eql(1)
   })
 
   it('user with editAllPermissions should be able to update entities', async () => {
-    await createTemplate(req1)
+    await createTemplate(req1())
     const req = createRequest({ context: { user: { _id: 'foo', editAllPermissions: true } } })
     await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req)
   })
@@ -117,8 +117,8 @@ describe('authorization', () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
       shortid: 'folder',
-      readPermissions: [req2.context.user._id]
-    }, req1)
+      readPermissions: [req2().context.user._id]
+    }, req1())
 
     await reporter.documentStore.collection('templates').insert({
       name: 'template',
@@ -128,9 +128,9 @@ describe('authorization', () => {
       folder: {
         shortid: 'folder'
       }
-    }, req1)
+    }, req1())
 
-    const count = await countTemplates(req2)
+    const count = await countTemplates(req2())
     count.should.be.eql(1)
   })
 
@@ -138,34 +138,34 @@ describe('authorization', () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
       shortid: 'folder'
-    }, req1)
+    }, req1())
 
     return reporter.documentStore.collection('folders').insert({
       name: 'nested',
       shortid: 'nested',
       folder: { shortid: 'folder' }
-    }, req2).should.be.rejected()
+    }, req2()).should.be.rejected()
   })
 
   it('user should be able to create entities in folders where he has permissions', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
       shortid: 'folder',
-      editPermissions: [req2.context.user._id]
-    }, req1)
+      editPermissions: [req2().context.user._id]
+    }, req1())
 
     return reporter.documentStore.collection('folders').insert({
       name: 'nested',
       shortid: 'nested',
       folder: { shortid: 'folder' }
-    }, req2)
+    }, req2())
   })
 
   it('user should not be able to update entities in folders where he has no permissions', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
       shortid: 'folder'
-    }, req1)
+    }, req1())
 
     await reporter.documentStore.collection('templates').insert({
       name: 'template',
@@ -173,22 +173,22 @@ describe('authorization', () => {
       recipe: 'html',
       content: 'foo',
       folder: { shortid: 'folder' }
-    }, req1)
+    }, req1())
 
     return reporter.documentStore.collection('templates').update({
       name: 'template'
     }, {
       $set: { content: 'change' }
-    }, req2).should.be.rejected()
+    }, req2()).should.be.rejected()
   })
 
   it('user should be able to update entities in folders where he has permissions', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
       shortid: 'folder',
-      editPermissions: [req2.context.user._id],
-      readPermissions: [req2.context.user._id]
-    }, req1)
+      editPermissions: [req2().context.user._id],
+      readPermissions: [req2().context.user._id]
+    }, req1())
 
     await reporter.documentStore.collection('templates').insert({
       name: 'template',
@@ -196,20 +196,20 @@ describe('authorization', () => {
       recipe: 'html',
       content: 'foo',
       folder: { shortid: 'folder' }
-    }, req2)
+    }, req2())
 
     return reporter.documentStore.collection('templates').update({
       name: 'template'
     }, {
       $set: { content: 'change' }
-    }, req1)
+    }, req1())
   })
 
   it('user should not be able to remove entities in folders where he has no permissions', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
       shortid: 'folder'
-    }, req1)
+    }, req1())
 
     await reporter.documentStore.collection('templates').insert({
       name: 'template',
@@ -217,19 +217,19 @@ describe('authorization', () => {
       recipe: 'html',
       content: 'foo',
       folder: { shortid: 'folder' }
-    }, req1)
+    }, req1())
 
     return reporter.documentStore.collection('templates').remove({
       name: 'template'
-    }, req2).should.be.rejected()
+    }, req2()).should.be.rejected()
   })
 
   it('user should be able to remove entities in folders where he has permissions', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
       shortid: 'folder',
-      editPermissions: [req2.context.user._id]
-    }, req1)
+      editPermissions: [req2().context.user._id]
+    }, req1())
 
     await reporter.documentStore.collection('templates').insert({
       name: 'template',
@@ -237,10 +237,91 @@ describe('authorization', () => {
       recipe: 'html',
       content: 'foo',
       folder: { shortid: 'folder' }
-    }, req1)
+    }, req1())
 
     return reporter.documentStore.collection('templates').remove({
       name: 'template'
-    }, req2)
+    }, req2())
+  })
+
+  it('updating folder permissions should propagate to the all childs', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'a',
+      shortid: 'a'
+    }, req1())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'b',
+      shortid: 'b',
+      folder: { shortid: 'a' }
+    }, req1())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      recipe: 'html',
+      content: 'foo',
+      folder: { shortid: 'b' }
+    }, req1())
+
+    await reporter.documentStore.collection('folders').update({
+      name: 'a'
+    }, {
+      $set: { editPermissions: [req1().context.user._id, req2().context.user._id] }
+    }, req1())
+
+    const count = await countTemplates(req2())
+    count.should.be.eql(1)
+  })
+
+  it('updating entity folder should get permissions from it', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'b',
+      shortid: 'b',
+      readPermissions: ['c']
+    }, req1())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      recipe: 'html',
+      content: 'foo'
+    }, req1())
+
+    await reporter.documentStore.collection('templates').update({
+      name: 'template'
+    }, {
+      $set: { folder: { shortid: 'b' } }
+    }, req1())
+
+    const count = await countTemplates(createRequest({ context: { user: { _id: 'c' } } }))
+    count.should.be.eql(1)
+  })
+
+  it('removing entity folder should remove inherited permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'b',
+      shortid: 'b',
+      readPermissions: ['b']
+    }, req1())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      recipe: 'html',
+      content: 'foo',
+      folder: {
+        shortid: 'b'
+      }
+    }, req2())
+
+    await reporter.documentStore.collection('templates').update({
+      name: 'template'
+    }, {
+      $set: { folder: null }
+    }, req2())
+
+    const count = await countTemplates(req1())
+    count.should.be.eql(0)
   })
 })
