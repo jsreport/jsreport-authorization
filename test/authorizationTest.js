@@ -28,6 +28,7 @@ describe('authorization', () => {
 
   const req1 = () => createRequest({ context: { user: { _id: 'a' } } })
   const req2 = () => createRequest({ context: { user: { _id: 'b' } } })
+  const reqAdmin = () => createRequest({ context: { user: { _id: 'admin', isAdmin: true } } })
 
   it('user creating entity should be able to read it', async () => {
     await createTemplate(req1())
@@ -137,27 +138,42 @@ describe('authorization', () => {
   it('user should not be able to create entities in folders where he has no permissions', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
-      shortid: 'folder'
-    }, req1())
+      shortid: 'folder',
+      visibilityPermissions: ['a']
+    }, reqAdmin())
 
-    return reporter.documentStore.collection('folders').insert({
+    return reporter.documentStore.collection('templates').insert({
       name: 'nested',
+      engine: 'none',
+      recipe: 'html',
       shortid: 'nested',
       folder: { shortid: 'folder' }
-    }, req2()).should.be.rejected()
+    }, req1()).should.be.rejectedWith(/Unauthorized/)
   })
 
   it('user should be able to create entities in folders where he has permissions', async () => {
     await reporter.documentStore.collection('folders').insert({
-      name: 'folder',
-      shortid: 'folder',
-      editPermissions: [req2().context.user._id]
-    }, req1())
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
 
-    return reporter.documentStore.collection('folders').insert({
-      name: 'nested',
-      shortid: 'nested',
-      folder: { shortid: 'folder' }
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb',
+      editPermissions: ['b'],
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      shortid: 'template',
+      engine: 'none',
+      recipe: 'html',
+      folder: {
+        shortid: 'folderb'
+      }
     }, req2())
   })
 
@@ -301,8 +317,7 @@ describe('authorization', () => {
   it('removing entity folder should remove inherited permissions', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'b',
-      shortid: 'b',
-      readPermissions: ['b']
+      shortid: 'b'
     }, req1())
 
     await reporter.documentStore.collection('templates').insert({
@@ -313,15 +328,247 @@ describe('authorization', () => {
       folder: {
         shortid: 'b'
       }
-    }, req2())
+    }, reqAdmin())
 
     await reporter.documentStore.collection('templates').update({
       name: 'template'
     }, {
       $set: { folder: null }
-    }, req2())
+    }, reqAdmin())
 
     const count = await countTemplates(req1())
+    count.should.be.eql(0)
+  })
+
+  it('user with read to an entity should be able to read parent folders', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, req1())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb',
+      folder: { shortid: 'foldera' }
+    }, req1())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'folderb'
+      }
+    }, req1())
+
+    await reporter.documentStore.collection('templates').update({ name: 'template' }, { $set: { readPermissions: [ req2().context.user._id ] } }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req2())
+    count.should.be.eql(2)
+  })
+
+  it('failed authorizatoin should not update visibility permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      shortid: 'template',
+      engine: 'none',
+      recipe: 'html',
+      readPermissions: ['a'],
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').remove({ name: 'template' }, req1()).should.be.rejectedWith(/Unauthorized/)
+
+    const count = await reporter.documentStore.collection('folders').count({}, req1())
+    count.should.be.eql(1)
+  })
+
+  it('moving folder should recalculate visibility permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, req1())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb'
+    }, req2())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'folderb'
+      }
+    }, req2())
+
+    await reporter.documentStore.collection('folders').update({ name: 'folderb' }, { $set: { folder: { shortid: 'foldera' } } }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req2())
+    count.should.be.eql(2)
+  })
+
+  it('moving folder should recalculate visibility permissions from inherited permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'folderb'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').update({ name: 'template' }, { $set: { readPermissions: ['b'] } }, reqAdmin())
+    await reporter.documentStore.collection('folders').update({ name: 'folderb' }, { $set: { folder: { shortid: 'foldera' } } }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req2())
+    count.should.be.eql(2)
+  })
+
+  it('moving folder should remove outdated visibility permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, req1())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb'
+    }, req2())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'folderb'
+      }
+    }, req2())
+
+    await reporter.documentStore.collection('folders').update({ name: 'folderb' }, { $set: { folder: { shortid: 'foldera' } } }, reqAdmin())
+    await reporter.documentStore.collection('folders').update({ name: 'folderb' }, { $set: { folder: null } }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req2())
+    count.should.be.eql(1)
+  })
+
+  it('removing entity should recalculate visibility', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').update({ name: 'template' }, { $set: { readPermissions: ['b'] } }, reqAdmin())
+    await reporter.documentStore.collection('templates').remove({ }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req2())
+    count.should.be.eql(0)
+  })
+
+  it('inserting entity should recalculate visibility on folders', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      editPermissions: ['a'],
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req1())
+    count.should.be.eql(1)
+  })
+
+  it('removing entity permissions should recalculate visibility', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      readPermissions: ['b'],
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').update({ name: 'template' }, { $set: { readPermissions: [] } }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req2())
+    count.should.be.eql(0)
+  })
+
+  it('removing folder permissions should recalculate visibility in the parent folder', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb',
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      readPermissions: ['b'],
+      folder: {
+        shortid: 'folderb'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('folders').remove({ name: 'folderb' }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req2())
     count.should.be.eql(0)
   })
 })
