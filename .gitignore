@@ -30,3 +30,5 @@ node_modules
 
 studio/main.js
 studio/main.js.map
+datatmp
+.vscode
