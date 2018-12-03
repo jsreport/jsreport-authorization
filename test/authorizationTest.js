@@ -474,6 +474,37 @@ describe('authorization', () => {
     count.should.be.eql(1)
   })
 
+  it('moving folder inside the same hierarchy should refresh visibility permissions', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb',
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'folderb'
+      },
+      readPermissions: [req1().context.user._id]
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').update({ name: 'template' }, { $set: { folder: { shortid: 'foldera' } } }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req1())
+    count.should.be.eql(1)
+  })
+
   it('removing entity should recalculate visibility', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'foldera',
