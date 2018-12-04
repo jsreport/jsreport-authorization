@@ -114,6 +114,52 @@ describe('authorization', () => {
     await reporter.documentStore.collection('templates').update({}, { $set: { content: 'hello' } }, req)
   })
 
+  it('query with $or should still correctly filter permissions', async () => {
+    await reporter.documentStore.collection('templates').insert({
+      name: 'a',
+      engine: 'none',
+      recipe: 'html'
+    }, req1())
+    await reporter.documentStore.collection('templates').insert({
+      name: 'b',
+      engine: 'none',
+      recipe: 'html'
+    }, req1())
+    await reporter.documentStore.collection('templates').insert({
+      name: 'c',
+      engine: 'none',
+      recipe: 'html'
+    }, req1())
+    const templates = await reporter.documentStore.collection('templates').find({
+      $or: [{name: 'a'}, {name: 'b'}]
+    }, req1())
+
+    templates.should.have.length(2)
+  })
+
+  it('query with $and should still correctly filter permissions', async () => {
+    await reporter.documentStore.collection('templates').insert({
+      name: 'a',
+      engine: 'none',
+      recipe: 'html'
+    }, req1())
+    await reporter.documentStore.collection('templates').insert({
+      name: 'b',
+      engine: 'none',
+      recipe: 'html'
+    }, req1())
+    await reporter.documentStore.collection('templates').insert({
+      name: 'c',
+      engine: 'none',
+      recipe: 'another'
+    }, req1())
+    const templates = await reporter.documentStore.collection('templates').find({
+      $and: [{engine: 'none'}, {recipe: 'html'}]
+    }, req1())
+
+    templates.should.have.length(2)
+  })
+
   it('user with permissions to the folder should have access also to the entities inside the folder', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'folder',
