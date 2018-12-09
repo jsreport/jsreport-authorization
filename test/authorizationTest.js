@@ -18,7 +18,7 @@ describe('authorization', () => {
   })
 
   function createTemplate (req) {
-    return reporter.documentStore.collection('templates').insert({content: 'foo', name: 'foo', engine: 'none', recipe: 'html'}, req)
+    return reporter.documentStore.collection('templates').insert({ content: 'foo', name: 'foo', engine: 'none', recipe: 'html' }, req)
   }
 
   async function countTemplates (req) {
@@ -131,7 +131,7 @@ describe('authorization', () => {
       recipe: 'html'
     }, req1())
     const templates = await reporter.documentStore.collection('templates').find({
-      $or: [{name: 'a'}, {name: 'b'}]
+      $or: [{ name: 'a' }, { name: 'b' }]
     }, req1())
 
     templates.should.have.length(2)
@@ -154,7 +154,7 @@ describe('authorization', () => {
       recipe: 'another'
     }, req1())
     const templates = await reporter.documentStore.collection('templates').find({
-      $and: [{engine: 'none'}, {recipe: 'html'}]
+      $and: [{ engine: 'none' }, { recipe: 'html' }]
     }, req1())
 
     templates.should.have.length(2)
