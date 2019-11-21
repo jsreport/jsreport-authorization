@@ -36,6 +36,32 @@ describe('authorization', () => {
     count.should.be.eql(1)
   })
 
+  it('user creating entity should be added to read, edit permissions', async () => {
+    const req = req1()
+    const template = await createTemplate(req)
+
+    const readPermissions = template.readPermissions || []
+    const editPermissions = template.editPermissions || []
+
+    readPermissions.should.have.length(1)
+    editPermissions.should.have.length(1)
+    template.readPermissions.should.containEql(req.context.user._id)
+    template.editPermissions.should.containEql(req.context.user._id)
+  })
+
+  it('admin user creating entity should not be added to read, edit permissions', async () => {
+    const req = reqAdmin()
+    const template = await createTemplate(req)
+
+    const readPermissions = template.readPermissions || []
+    const editPermissions = template.editPermissions || []
+
+    readPermissions.should.have.length(0)
+    editPermissions.should.have.length(0)
+    readPermissions.should.not.containEql(req.context.user._id)
+    editPermissions.should.not.containEql(req.context.user._id)
+  })
+
   it('user should not be able to read entity without permission to it', async () => {
     await createTemplate(req1())
     const count = await countTemplates(req2())
