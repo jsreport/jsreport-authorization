@@ -621,6 +621,85 @@ describe('authorization', () => {
     count.should.be.eql(1)
   })
 
+  it('inserting entity should recalculate visibility on folders (permissions on folder)', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      editPermissions: ['a'],
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req1())
+    count.should.be.eql(1)
+  })
+
+  it('inserting entity should recalculate visibility on folders (nested)', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb',
+      folder: {
+        shortid: 'foldera'
+      }
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      editPermissions: ['a'],
+      folder: {
+        shortid: 'folderb'
+      }
+    }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req1())
+    count.should.be.eql(2)
+  })
+
+  it('inserting entity should recalculate visibility on folders (nested - permissions on folder)', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('folders').insert({
+      name: 'folderb',
+      shortid: 'folderb',
+      folder: {
+        shortid: 'foldera'
+      },
+      editPermissions: ['a']
+    }, reqAdmin())
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'folderb'
+      }
+    }, reqAdmin())
+
+    const count = await reporter.documentStore.collection('folders').count({}, req1())
+    count.should.be.eql(2)
+  })
+
   it('removing entity permissions should recalculate visibility', async () => {
     await reporter.documentStore.collection('folders').insert({
       name: 'foldera',
