@@ -69,8 +69,8 @@ describe('authorization', () => {
   })
 
   it('query should filter out entities without permissions', async () => {
-    await createTemplate(req1())
-    await createTemplate(req2())
+    await reporter.documentStore.collection('templates').insert({ content: 'foo', name: 'a', engine: 'none', recipe: 'html' }, req1())
+    await reporter.documentStore.collection('templates').insert({ content: 'foo', name: 'b', engine: 'none', recipe: 'html' }, req2())
     const count = await countTemplates(req1())
     count.should.be.eql(1)
   })
@@ -752,6 +752,29 @@ describe('authorization', () => {
 
     const count = await reporter.documentStore.collection('folders').count({}, req2())
     count.should.be.eql(0)
+  })
+
+  it('should not have user on context when collecting entities for visibility propagation', async () => {
+    await reporter.documentStore.collection('folders').insert({
+      name: 'foldera',
+      shortid: 'foldera'
+    }, req2())
+
+    reporter.documentStore.collection('templates').beforeFindListeners.insert(0, 'test', (q, p, req) => {
+      if (q.folder) {
+        should(req.context.user).not.be.ok()
+      }
+    })
+
+    await reporter.documentStore.collection('templates').insert({
+      name: 'template',
+      engine: 'none',
+      content: 'foo',
+      recipe: 'html',
+      folder: {
+        shortid: 'foldera'
+      }
+    }, req2())
   })
 })
 
