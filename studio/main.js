@@ -126,7 +126,7 @@ _jsreportStudio2.default.initializeListeners.push(_asyncToGenerator( /*#__PURE__
         case 2:
 
           _jsreportStudio2.default.addPropertiesComponent('permissions', _PermissionProperties2.default, function (entity) {
-            return entity.__entitySet !== 'users';
+            return _jsreportStudio2.default.extensions.authorization.options.sharedEntitySets.indexOf(entity.__entitySet) === -1;
           });
 
           _jsreportStudio2.default.authentication.useEditorComponents.push(function (user) {
