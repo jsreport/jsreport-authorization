@@ -1,3 +1,6 @@
+**⚠️ This repository has been moved to the monorepo [jsreport/jsreport](https://github.com/jsreport/jsreport)**
+--
+
 # jsreport-authorization
 [![NPM Version](http://img.shields.io/npm/v/jsreport-authorization.svg?style=flat-square)](https://npmjs.com/package/jsreport-authorization)
 [![Build Status](https://travis-ci.org/jsreport/jsreport-authorization.png?branch=master)](https://travis-ci.org/jsreport/jsreport-authorization)
